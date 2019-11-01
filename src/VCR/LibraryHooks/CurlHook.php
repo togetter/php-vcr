@@ -152,6 +152,19 @@ class CurlHook implements LibraryHook
     }
 
     /**
+     * @link https://www.php.net/manual/ja/function.curl-multi-getcontent.php
+     * @param resource $curlHandle A cURL handle returned by curl_init().
+     *
+     * @return mixed Returns TRUE on success or FALSE on failure.
+     * However, if the CURLOPT_RETURNTRANSFER option is set, it will return the
+     * result on success, FALSE on failure.
+     */
+    public static function curlMultiGetcontent($resource)
+    {
+        return self::curlExec($resource);
+    }
+
+    /**
      * Initialize a cURL session.
      *
      * @link http://www.php.net/manual/en/function.curl-init.php
