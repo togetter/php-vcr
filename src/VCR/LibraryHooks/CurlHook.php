@@ -135,23 +135,33 @@ class CurlHook implements LibraryHook
     {
         // Call original when disabled
         if (static::$status == self::DISABLED) {
-            if ($method === 'curl_multi_exec') {
-                // curl_multi_exec expects to be called with args by reference
-                // which call_user_func_array doesn't do.
-                return \curl_multi_exec($args[0], $args[1]);
-            }
-
             return \call_user_func_array($method, $args);
-        }
-
-        if ($method === 'curl_multi_exec') {
-            // curl_multi_exec expects to be called with args by reference
-            // which call_user_func_array doesn't do.
-            return self::curlMultiExec($args[0], $args[1]);
         }
 
         $localMethod = TextUtil::underscoreToLowerCamelcase($method);
         return \call_user_func_array(array(__CLASS__, $localMethod), $args);
+    }
+
+    public static function curl_multi_exec($multiHandle, &$stillRunning)
+    {
+        if (static::$status == self::DISABLED) {
+            return \curl_multi_exec($multiHandle, $stillRunning);
+        }
+
+        return self::curlMultiExec($multiHandle, $stillRunning);
+    }
+
+    /**
+     * @link https://www.php.net/manual/ja/function.curl-multi-getcontent.php
+     * @param resource $curlHandle A cURL handle returned by curl_init().
+     *
+     * @return mixed Returns TRUE on success or FALSE on failure.
+     * However, if the CURLOPT_RETURNTRANSFER option is set, it will return the
+     * result on success, FALSE on failure.
+     */
+    public static function curlMultiGetcontent($resource)
+    {
+        return self::curlExec($resource);
     }
 
     /**
@@ -216,6 +226,8 @@ class CurlHook implements LibraryHook
      * @link http://www.php.net/manual/en/function.curl-multi-add-handle.php
      * @param resource $multiHandle A cURL multi handle returned by curl_multi_init().
      * @param resource $curlHandle  A cURL handle returned by curl_init().
+     *
+     * @return integer  A cURL code defined in the cURL Predefined Constants.
      */
     public static function curlMultiAddHandle($multiHandle, $curlHandle)
     {
@@ -224,6 +236,8 @@ class CurlHook implements LibraryHook
         }
 
         self::$multiHandles[(int) $multiHandle][(int) $curlHandle] = $curlHandle;
+
+        return CURLM_OK;
     }
 
     /**
