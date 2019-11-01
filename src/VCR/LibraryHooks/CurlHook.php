@@ -135,23 +135,20 @@ class CurlHook implements LibraryHook
     {
         // Call original when disabled
         if (static::$status == self::DISABLED) {
-            if ($method === 'curl_multi_exec') {
-                // curl_multi_exec expects to be called with args by reference
-                // which call_user_func_array doesn't do.
-                return \curl_multi_exec($args[0], $args[1]);
-            }
-
             return \call_user_func_array($method, $args);
-        }
-
-        if ($method === 'curl_multi_exec') {
-            // curl_multi_exec expects to be called with args by reference
-            // which call_user_func_array doesn't do.
-            return self::curlMultiExec($args[0], $args[1]);
         }
 
         $localMethod = TextUtil::underscoreToLowerCamelcase($method);
         return \call_user_func_array(array(__CLASS__, $localMethod), $args);
+    }
+
+    public static function curl_multi_exec($multiHandle, &$stillRunning)
+    {
+        if (static::$status == self::DISABLED) {
+            return \curl_multi_exec($multiHandle, $stillRunning);
+        }
+
+        return self::curlMultiExec($multiHandle, $stillRunning);
     }
 
     /**
